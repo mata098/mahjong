@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>麻雀精算プログラム</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .input-section {
+            margin-bottom: 30px;
+        }
+
+        .player-input {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+
+        .player-input input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .player-input input:focus {
+            outline: none;
+            border-color: #4facfe;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #2ed573 0%, #1e90ff 100%);
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .result-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            margin-top: 20px;
+        }
+
+        .result-section h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .player-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .player-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .player-card.positive {
+            border-left: 4px solid #2ed573;
+        }
+
+        .player-card.negative {
+            border-left: 4px solid #ff6b6b;
+        }
+
+        .player-card.zero {
+            border-left: 4px solid #95a5a6;
+        }
+
+        .amount {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .amount.positive {
+            color: #2ed573;
+        }
+
+        .amount.negative {
+            color: #ff6b6b;
+        }
+
+        .amount.zero {
+            color: #95a5a6;
+        }
+
+        .payment-list {
+            list-style: none;
+        }
+
+        .payment-item {
+            background: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .payment-arrow {
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .payment-amount {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .error {
+            color: #e74c3c;
+            background: #fdf2f2;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+
+        .success {
+            color: #27ae60;
+            background: #f0f9f4;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+
+        @media (max-width: 600px) {
+            .player-input {
+                flex-direction: column;
+            }
+
+            .controls {
+                flex-direction: column;
+            }
+
+            .payment-item {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🀄 麻雀精算プログラム</h1>
+            <p>最小限の支払いで効率的に精算しましょう</p>
+        </div>
+
+        <div class="content">
+            <div class="input-section">
+                <h3>プレイヤーと勝ち額を入力</h3>
+                <div id="playerInputs">
+                    <div class="player-input">
+                        <input type="text" placeholder="プレイヤー名" class="player-name">
+                        <input type="text" placeholder="勝ち額（負けの場合は負の値、カンマ可）" class="player-amount">
+                        <button class="btn btn-danger" onclick="removePlayer(this)">削除</button>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <button class="btn" onclick="addPlayer()">プレイヤー追加</button>
+                    <button class="btn btn-success" onclick="calculateSettlement()">精算計算</button>
+                    <button class="btn" onclick="clearAll()">クリア</button>
+                </div>
+            </div>
+
+            <div id="resultSection" class="result-section hidden">
+                <h3>📊 精算結果</h3>
+
+                <div id="currentStatus">
+                    <h4>現在の状況</h4>
+                    <div id="playerList" class="player-list"></div>
+                </div>
+
+                <div id="settlementMethod">
+                    <h4>精算方法</h4>
+                    <ul id="paymentList" class="payment-list"></ul>
+                </div>
+
+                <div id="summary"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class MahjongSettlement {
+            constructor() {
+                this.players = new Map();
+            }
+
+            addPlayer(playerName, amount) {
+                this.players.set(playerName, amount);
+            }
+
+            formatNumber(num) {
+                return num.toLocaleString('ja-JP');
+            }
+
+            calculateSettlement() {
+                const balances = Array.from(this.players.entries()).map(([name, amount]) => ({
+                    name,
+                    amount
+                }));
+
+                balances.sort((a, b) => a.amount - b.amount);
+
+                const payments = [];
+                let left = 0;
+                let right = balances.length - 1;
+
+                while (left < right) {
+                    const debtor = balances[left];
+                    const creditor = balances[right];
+
+                    if (debtor.amount >= 0) break;
+                    if (creditor.amount <= 0) break;
+
+                    const payment = Math.min(-debtor.amount, creditor.amount);
+
+                    if (payment > 0) {
+                        payments.push({
+                            from: debtor.name,
+                            to: creditor.name,
+                            amount: payment
+                        });
+                    }
+
+                    debtor.amount += payment;
+                    creditor.amount -= payment;
+
+                    if (debtor.amount === 0) left++;
+                    if (creditor.amount === 0) right--;
+                }
+
+                return payments;
+            }
+
+            validateSettlement() {
+                const total = Array.from(this.players.values()).reduce((sum, amount) => sum + amount, 0);
+                return Math.abs(total) < 0.01;
+            }
+        }
+
+        function addPlayer() {
+            const container = document.getElementById('playerInputs');
+            const newInput = document.createElement('div');
+            newInput.className = 'player-input';
+            newInput.innerHTML = `
+                <input type="text" placeholder="プレイヤー名" class="player-name">
+                <input type="text" placeholder="勝ち額（負けの場合は負の値、カンマ可）" class="player-amount">
+                <button class="btn btn-danger" onclick="removePlayer(this)">削除</button>
+            `;
+            container.appendChild(newInput);
+        }
+
+        function removePlayer(button) {
+            const inputs = document.querySelectorAll('.player-input');
+            if (inputs.length > 1) {
+                button.parentElement.remove();
+            }
+        }
+
+        function clearAll() {
+            document.getElementById('playerInputs').innerHTML = `
+                <div class="player-input">
+                    <input type="text" placeholder="プレイヤー名" class="player-name">
+                    <input type="text" placeholder="勝ち額（負けの場合は負の値、カンマ可）" class="player-amount">
+                    <button class="btn btn-danger" onclick="removePlayer(this)">削除</button>
+                </div>
+            `;
+            document.getElementById('resultSection').classList.add('hidden');
+        }
+
+        function calculateSettlement() {
+            const settlement = new MahjongSettlement();
+            const playerInputs = document.querySelectorAll('.player-input');
+
+            // 入力値を収集
+            for (let input of playerInputs) {
+                const nameInput = input.querySelector('.player-name');
+                const amountInput = input.querySelector('.player-amount');
+
+                const name = nameInput.value.trim();
+                const amountStr = amountInput.value.trim();
+
+                if (!name || !amountStr) {
+                    showError('プレイヤー名と勝ち額をすべて入力してください。');
+                    return;
+                }
+
+                // カンマを除去して数値に変換
+                const cleanAmount = amountStr.replace(/,/g, '');
+                const amount = parseFloat(cleanAmount);
+
+                if (isNaN(amount)) {
+                    showError(`${name}の勝ち額が正しくありません。`);
+                    return;
+                }
+
+                settlement.addPlayer(name, amount);
+            }
+
+            // 検証
+            if (!settlement.validateSettlement()) {
+                showError('勝ち額の合計が0になりません。入力値を確認してください。');
+                return;
+            }
+
+            // 結果を表示
+            displayResults(settlement);
+        }
+
+        function displayResults(settlement) {
+            const resultSection = document.getElementById('resultSection');
+            const playerList = document.getElementById('playerList');
+            const paymentList = document.getElementById('paymentList');
+            const summary = document.getElementById('summary');
+
+            // 現在の状況を表示
+            playerList.innerHTML = '';
+            settlement.players.forEach((amount, name) => {
+                const card = document.createElement('div');
+                card.className = `player-card ${amount > 0 ? 'positive' : amount < 0 ? 'negative' : 'zero'}`;
+
+                const formattedAmount = settlement.formatNumber(amount);
+                const amountClass = amount > 0 ? 'positive' : amount < 0 ? 'negative' : 'zero';
+
+                card.innerHTML = `
+                    <div><strong>${name}</strong></div>
+                    <div class="amount ${amountClass}">${amount > 0 ? '+' : ''}${formattedAmount}</div>
+                `;
+                playerList.appendChild(card);
+            });
+
+            // 精算方法を表示
+            const payments = settlement.calculateSettlement();
+            paymentList.innerHTML = '';
+
+            if (payments.length === 0) {
+                paymentList.innerHTML = '<li class="payment-item">支払いは必要ありません。</li>';
+            } else {
+                payments.forEach((payment, index) => {
+                    const item = document.createElement('li');
+                    item.className = 'payment-item';
+                    const formattedAmount = settlement.formatNumber(payment.amount);
+                    item.innerHTML = `
+                        <span><strong>${index + 1}.</strong> ${payment.from}</span>
+                        <span class="payment-arrow">→</span>
+                        <span>${payment.to}</span>
+                        <span class="payment-amount">${formattedAmount}</span>
+                    `;
+                    paymentList.appendChild(item);
+                });
+            }
+
+            // サマリーを表示
+            summary.innerHTML = `
+                <div class="success">
+                    <strong>✅ 精算完了</strong><br>
+                    合計 ${payments.length} 回の支払いで精算完了
+                </div>
+            `;
+
+            resultSection.classList.remove('hidden');
+        }
+
+        function showError(message) {
+            const resultSection = document.getElementById('resultSection');
+            const summary = document.getElementById('summary');
+
+            summary.innerHTML = `<div class="error">❌ ${message}</div>`;
+            resultSection.classList.remove('hidden');
+        }
+
+        // 初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            // Enterキーで計算実行
+            document.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    calculateSettlement();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
